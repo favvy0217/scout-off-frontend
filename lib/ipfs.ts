@@ -2,6 +2,26 @@ export const DEFAULT_IPFS_FALLBACKS = ['https://ipfs.io/ipfs', 'https://cloudfla
 
 const PRIMARY_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY ?? 'https://gateway.pinata.cloud/ipfs';
 
+/**
+ * Default ordered list of fallback IPFS gateways used when the primary gateway
+ * returns a 4xx or 5xx response or times out.
+ *
+ * Exported so consumers and test suites can reference or override the list.
+ */
+export const DEFAULT_IPFS_FALLBACKS: string[] = [
+  "https://ipfs.io/ipfs",
+  "https://cloudflare-ipfs.com/ipfs",
+];
+
+/** Timeout per gateway attempt in milliseconds. */
+const ATTEMPT_TIMEOUT_MS = 8_000;
+
+/**
+ * Upload a file to IPFS via the internal API route.
+ *
+ * @param file - The file to upload.
+ * @returns The IPFS CID string assigned by the pinning service.
+ */
 export async function uploadToIPFS(file: File): Promise<string> {
   const form = new FormData();
   form.append('file', file);

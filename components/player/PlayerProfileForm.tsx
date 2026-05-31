@@ -189,9 +189,9 @@ export default function PlayerProfileForm({
         error={errors.position}
       >
         <option value="">Select position</option>
-        {POSITIONS.map((pos) => (
-          <option key={pos} value={pos}>
-            {pos}
+        {FOOTBALL_POSITIONS.map((pos) => (
+          <option key={pos.value} value={pos.value}>
+            {pos.label}
           </option>
         ))}
       </Select>

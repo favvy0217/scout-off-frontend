@@ -1,13 +1,8 @@
-"use client";
-import { memo, useCallback, KeyboardEvent } from "react";
-import { useRouter } from "next/navigation";
-import type { Player } from "@/types";
-import { PROGRESS_LABELS } from "@/types";
-import ProgressBar from "./ProgressBar";
-import Badge from "./ui/Badge";
-
-// Map progress level to Badge variant
-const LEVEL_VARIANT = ["level0", "level1", "level2", "level3"] as const;
+import { memo } from 'react';
+import Link from 'next/link';
+import type { Player } from '@/types';
+import { PROGRESS_LABELS } from '@/types';
+import ProgressBar from './ProgressBar';
 
 function PlayerCard({ player }: { player: Player }) {
   const { id, vitals, progressLevel, ipfsHash } = player;
@@ -83,7 +78,9 @@ function PlayerCard({ player }: { player: Player }) {
   );
 }
 
-export default memo(PlayerCard, (prev, next) =>
-  prev.player.id === next.player.id &&
-  prev.player.progressLevel === next.player.progressLevel
+export default memo(
+  PlayerCard,
+  (prev, next) =>
+    prev.player.id === next.player.id &&
+    prev.player.progressLevel === next.player.progressLevel,
 );

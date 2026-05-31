@@ -44,7 +44,7 @@ const withPWA = require("next-pwa")({
 
 const nextConfig = {
   images: {
-    domains: ["ipfs.io", "gateway.pinata.cloud"],
+    domains: ['ipfs.io', 'gateway.pinata.cloud'],
   },
 };
 

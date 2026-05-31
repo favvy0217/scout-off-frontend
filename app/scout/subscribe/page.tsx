@@ -93,13 +93,16 @@ function SubscribeContent() {
     setSuccessMessage('');
 
     try {
-      await subscribe(tier);
+      const result = await subscribe(tier);
+      const hash = (result as any)?.hash ?? null;
+      setTxHash(hash);
+      setTxStatus("success");
       setSuccessMessage(`Subscribed to ${tier.toUpperCase()} successfully.`);
       redirectTimer.current = window.setTimeout(() => {
         router.push('/scout');
       }, 1000);
     } catch (err) {
-      // Error state is handled by the hook and displayed in the page.
+      setTxStatus("error");
       console.error(err);
     } finally {
       setSelectedTier(null);
@@ -135,7 +138,14 @@ function SubscribeContent() {
           </div>
         )}
 
-        {error && (
+        <TransactionStatus
+          status={txStatus}
+          txHash={txHash}
+          error={error ?? undefined}
+          onHide={() => setTxStatus(null)}
+        />
+
+        {error && txStatus !== "error" && (
           <div
             role="status"
             aria-live="assertive"

@@ -36,6 +36,8 @@ export default function PlayerProfileForm({
   const { publicKey, signAndSubmit } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [txStatus, setTxStatus] = useState<TxStatus | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -94,6 +96,8 @@ export default function PlayerProfileForm({
 
     setIsLoading(true);
     setErrors({});
+    setTxStatus("pending");
+    setTxHash(null);
 
     try {
       const vitals: PlayerVitals = {
@@ -111,13 +115,14 @@ export default function PlayerProfileForm({
       );
       const result = await signAndSubmit(xdr);
 
-      // Extract player ID from result or generate it
-      // For now, we'll use the transaction hash as a temporary ID
-      // In a real implementation, this would come from the contract response
-      const playerId = (result as any)?.id || publicKey;
+      const hash = (result as any)?.hash ?? null;
+      setTxHash(hash);
+      setTxStatus("success");
 
+      const playerId = (result as any)?.id || publicKey;
       onSuccess(playerId);
     } catch (error) {
+      setTxStatus("error");
       setErrors({
         form: error instanceof Error ? error.message : 'Registration failed',
       });

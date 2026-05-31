@@ -14,6 +14,9 @@ export default function PlayerProfile() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
+  const [txStatus, setTxStatus] = useState<TxStatus | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   useEffect(() => {
     getPlayer(id)
@@ -24,9 +27,18 @@ export default function PlayerProfile() {
   async function handleContact() {
     if (!publicKey) return;
     setContacting(true);
+    setTxStatus("pending");
+    setTxHash(null);
+    setContactError(null);
     try {
       const xdr = await buildPayToContact(publicKey, id);
-      await signAndSubmit(xdr);
+      const result = await signAndSubmit(xdr);
+      const hash = (result as any)?.hash ?? null;
+      setTxHash(hash);
+      setTxStatus("success");
+    } catch (e: any) {
+      setTxStatus("error");
+      setContactError(e?.message ?? "Transaction failed");
     } finally {
       setContacting(false);
     }

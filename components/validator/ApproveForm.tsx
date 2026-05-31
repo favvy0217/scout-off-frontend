@@ -4,6 +4,7 @@ import { useWallet } from "@/hooks/useWallet";
 import { useValidator } from "@/hooks/useValidator";
 import { getPlayer } from "@/lib/contract";
 import { PROGRESS_LABELS } from "@/types";
+import TransactionStatus, { type TxStatus } from "@/components/ui/TransactionStatus";
 import type { Player } from "@/types";
 
 interface ApproveFormProps {
@@ -21,6 +22,9 @@ export default function ApproveForm({ onSuccess }: ApproveFormProps) {
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [txStatus, setTxStatus] = useState<TxStatus | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   function validateUrl(url: string): boolean {
     try {
@@ -61,12 +65,19 @@ export default function ApproveForm({ onSuccess }: ApproveFormProps) {
     if (evidenceUrl && !validateUrl(evidenceUrl)) return;
 
     setSubmitting(true);
+    setTxStatus("pending");
+    setTxHash(null);
+    setSubmitError(null);
     try {
       const xdr = await approveMilestone(playerId.trim(), description);
-      await signAndSubmit(xdr);
+      const result = await signAndSubmit(xdr);
+      const hash = (result as any)?.hash ?? null;
+      setTxHash(hash);
+      setTxStatus("success");
       onSuccess();
-    } catch {
-      // Error handled by hook state
+    } catch (e: any) {
+      setTxStatus("error");
+      setSubmitError(e?.message ?? "Approval failed");
     } finally {
       setSubmitting(false);
     }
@@ -155,6 +166,13 @@ export default function ApproveForm({ onSuccess }: ApproveFormProps) {
         />
         {urlError && <p className="text-red-400 text-xs">{urlError}</p>}
       </div>
+
+      <TransactionStatus
+        status={txStatus}
+        txHash={txHash}
+        error={submitError}
+        onHide={() => setTxStatus(null)}
+      />
 
       <button
         type="submit"

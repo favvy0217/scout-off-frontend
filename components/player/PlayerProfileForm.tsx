@@ -6,6 +6,7 @@ import { buildRegisterPlayer } from "@/lib/contract";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import VideoUpload from "@/components/ui/VideoUpload";
+import TransactionStatus, { type TxStatus } from "@/components/ui/TransactionStatus";
 import type { PlayerVitals } from "@/types";
 
 interface PlayerProfileFormProps {
@@ -34,6 +35,8 @@ export default function PlayerProfileForm({ onSuccess }: PlayerProfileFormProps)
   const { publicKey, signAndSubmit } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [txStatus, setTxStatus] = useState<TxStatus | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -92,6 +95,8 @@ export default function PlayerProfileForm({ onSuccess }: PlayerProfileFormProps)
 
     setIsLoading(true);
     setErrors({});
+    setTxStatus("pending");
+    setTxHash(null);
 
     try {
       const vitals: PlayerVitals = {
@@ -105,13 +110,14 @@ export default function PlayerProfileForm({ onSuccess }: PlayerProfileFormProps)
       const xdr = await buildRegisterPlayer(publicKey, vitals, formData.ipfsHash);
       const result = await signAndSubmit(xdr);
 
-      // Extract player ID from result or generate it
-      // For now, we'll use the transaction hash as a temporary ID
-      // In a real implementation, this would come from the contract response
-      const playerId = (result as any)?.id || publicKey;
+      const hash = (result as any)?.hash ?? null;
+      setTxHash(hash);
+      setTxStatus("success");
 
+      const playerId = (result as any)?.id || publicKey;
       onSuccess(playerId);
     } catch (error) {
+      setTxStatus("error");
       setErrors({
         form: error instanceof Error ? error.message : "Registration failed",
       });
@@ -238,6 +244,13 @@ export default function PlayerProfileForm({ onSuccess }: PlayerProfileFormProps)
       {errors.form && (
         <p className="text-sm text-red-500 text-center">{errors.form}</p>
       )}
+
+      <TransactionStatus
+        status={txStatus}
+        txHash={txHash}
+        error={errors.form}
+        onHide={() => setTxStatus(null)}
+      />
 
       <Button type="submit" isLoading={isLoading} disabled={isLoading} className="w-full">
         {isLoading ? "Registering..." : "Register as Player"}

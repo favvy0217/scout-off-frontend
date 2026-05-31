@@ -6,6 +6,7 @@ import ProgressBar from "@/components/ProgressBar";
 import { getPlayer } from "@/lib/contract";
 import { buildPayToContact } from "@/lib/contract";
 import { ipfsUrl } from "@/lib/ipfs";
+import TransactionStatus, { type TxStatus } from "@/components/ui/TransactionStatus";
 import type { Player } from "@/types";
 
 export default function PlayerProfile() {
@@ -14,6 +15,9 @@ export default function PlayerProfile() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
+  const [txStatus, setTxStatus] = useState<TxStatus | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   useEffect(() => {
     getPlayer(id).then(setPlayer).finally(() => setLoading(false));
@@ -22,9 +26,18 @@ export default function PlayerProfile() {
   async function handleContact() {
     if (!publicKey) return;
     setContacting(true);
+    setTxStatus("pending");
+    setTxHash(null);
+    setContactError(null);
     try {
       const xdr = await buildPayToContact(publicKey, id);
-      await signAndSubmit(xdr);
+      const result = await signAndSubmit(xdr);
+      const hash = (result as any)?.hash ?? null;
+      setTxHash(hash);
+      setTxStatus("success");
+    } catch (e: any) {
+      setTxStatus("error");
+      setContactError(e?.message ?? "Transaction failed");
     } finally {
       setContacting(false);
     }
@@ -75,13 +88,21 @@ export default function PlayerProfile() {
 
       {/* Pay to contact */}
       {publicKey && (
-        <button
-          onClick={handleContact}
-          disabled={contacting}
-          className="bg-brand-green text-black font-semibold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50"
-        >
-          {contacting ? "Processing…" : "Pay to Contact (1 XLM)"}
-        </button>
+        <div className="flex flex-col gap-3">
+          <TransactionStatus
+            status={txStatus}
+            txHash={txHash}
+            error={contactError}
+            onHide={() => setTxStatus(null)}
+          />
+          <button
+            onClick={handleContact}
+            disabled={contacting}
+            className="bg-brand-green text-black font-semibold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50"
+          >
+            {contacting ? "Processing…" : "Pay to Contact (1 XLM)"}
+          </button>
+        </div>
       )}
     </div>
   );

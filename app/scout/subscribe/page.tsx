@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import TransactionStatus, { type TxStatus } from "@/components/ui/TransactionStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { SubscriptionTier } from "@/types";
 
@@ -53,6 +54,8 @@ function SubscribeContent() {
   const { subscription, isExpired, subscribe, loading, error } = useSubscription();
   const [successMessage, setSuccessMessage] = useState("");
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier | null>(null);
+  const [txStatus, setTxStatus] = useState<TxStatus | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
   const redirectTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -86,15 +89,20 @@ function SubscribeContent() {
 
     setSelectedTier(tier);
     setSuccessMessage("");
+    setTxStatus("pending");
+    setTxHash(null);
 
     try {
-      await subscribe(tier);
+      const result = await subscribe(tier);
+      const hash = (result as any)?.hash ?? null;
+      setTxHash(hash);
+      setTxStatus("success");
       setSuccessMessage(`Subscribed to ${tier.toUpperCase()} successfully.`);
       redirectTimer.current = window.setTimeout(() => {
         router.push("/scout");
       }, 1000);
     } catch (err) {
-      // Error state is handled by the hook and displayed in the page.
+      setTxStatus("error");
       console.error(err);
     } finally {
       setSelectedTier(null);
@@ -126,7 +134,14 @@ function SubscribeContent() {
           </div>
         )}
 
-        {error && (
+        <TransactionStatus
+          status={txStatus}
+          txHash={txHash}
+          error={error ?? undefined}
+          onHide={() => setTxStatus(null)}
+        />
+
+        {error && txStatus !== "error" && (
           <div
             role="status"
             aria-live="assertive"
